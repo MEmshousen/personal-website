@@ -10,6 +10,7 @@ const commands = [
   ...['About', 'Skills', 'Experience', 'Projects', 'Hobbies', 'Contact'].map((label) => ({
     group: 'Go to', label, action: 'goto', value: `#${label.toLowerCase()}`,
   })),
+  { group: 'Go to', label: 'Work in progress', action: 'goto', value: '#wip' },
   { group: 'Action', label: 'Copy email address', action: 'copy', value: profile.email },
   { group: 'Action', label: 'Write an email', action: 'open', value: `mailto:${profile.email}` },
   { group: 'Action', label: 'Download résumé', action: 'download', value: resumeHref },

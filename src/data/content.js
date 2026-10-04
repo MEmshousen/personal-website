@@ -218,6 +218,22 @@ export const experience = {
   ],
 };
 
+export const wip = {
+  heading: 'Work in progress',
+  // What you're building right now. Swap this out when the next thing starts.
+  title: 'All In',
+  status: 'In progress',
+  // File lives in /public.
+  image: 'all-in-icon.png',
+  summary:
+    'A card-combat roguelike set in a casino. Every fight is a hand of cards against the House: draw seven, play up to five, and the order you play them in is the skill.',
+  role:
+    'I draw the game: card faces, boss portraits, backdrops, and the opening story frames, plus the screens that put them in front of the player.',
+  meta: 'Started at HackRice 16 · Team of three · Sept 2026',
+  stack: ['Rust', 'Bevy', 'Game art'],
+  links: [{ label: 'View on GitHub', url: 'https://github.com/jpierre-7/all-in' }],
+};
+
 export const projects = {
   heading: 'Projects',
   blurb: 'Things I built to answer a question, win a weekend, or scratch an itch.',
