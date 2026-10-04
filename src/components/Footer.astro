@@ -1,0 +1,44 @@
+---
+import { profile } from '../data/content.js';
+const year = new Date().getFullYear();
+---
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <p class="foot-name">
+      {profile.name}
+      <span class="foot-sep" aria-hidden="true">·</span>
+      <span class="foot-dim">Built from scratch with Astro</span>
+    </p>
+    <p class="foot-end">
+      <a class="link" href="#top">Back to top</a>
+      <span class="foot-dim">© {year}</span>
+    </p>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    border-top: 1px solid var(--line);
+    /* Leaves room for the fixed design switcher while previewing */
+    padding-block: 2.25rem 2.75rem;
+  }
+  .foot-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    font-size: 0.84rem;
+  }
+  .foot-name { font-weight: 600; }
+  .foot-sep { color: var(--faint); margin-inline: 0.4rem; }
+  .foot-dim { color: var(--faint); font-weight: 400; }
+  .foot-end {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.4rem;
+  }
+  .foot .link { font-size: 0.84rem; }
+</style>

@@ -1,0 +1,243 @@
+---
+import '../styles/global.css';
+import Palette from '../components/Palette.astro';
+import DesignDock from '../components/DesignDock.astro';
+import PointerField from '../components/PointerField.astro';
+import { profile, site } from '../data/content.js';
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const image = profile.photo
+  ? new URL(`${import.meta.env.BASE_URL}/${profile.photo}`.replace(/\/+/g, '/'), Astro.site).href
+  : null;
+const designIds = site.designs.map((d) => d.id);
+// The design switcher is a preview tool: it only exists in `npm run dev`.
+const preview = import.meta.env.DEV;
+---
+
+<!doctype html>
+<html lang="en" data-theme={site.design}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Social preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {image && <meta property="og:image" content={image} />}
+    <meta name="twitter:card" content="summary" />
+
+    <meta name="theme-color" content="#150e13" />
+
+    <!-- Runs before first paint: picks the design (?design= in the URL, then
+         a choice saved by the dev switcher, then the default above) and sets
+         .js so reveal-animations never flash and no-JS visitors see it all. -->
+    <script is:inline define:vars={{ designIds }}>
+      (function () {
+        var root = document.documentElement, pick = null;
+        try {
+          pick = new URLSearchParams(location.search).get('design') || localStorage.getItem('design');
+        } catch (e) {}
+        if (designIds.indexOf(pick) > -1) root.dataset.theme = pick;
+        root.classList.add('js');
+      })();
+    </script>
+    <link rel="icon" href={`${import.meta.env.BASE_URL}/favicon.svg`.replace(/\/+/g, '/')} type="image/svg+xml" />
+
+    <!-- Fonts: one stylesheet for all three designs; the browser only
+         downloads the font files the active design actually uses. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Geist:wght@100..900&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&family=Outfit:wght@300..700&display=swap"
+    />
+
+    <!-- Structured data so search engines understand who this is -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: profile.name,
+      jobTitle: profile.title,
+      ...(image && { image }),
+      worksFor: { '@type': 'Organization', name: profile.employer },
+      email: `mailto:${profile.email}`,
+      url: canonical,
+      sameAs: [profile.links.github, profile.links.linkedin],
+      alumniOf: { '@type': 'CollegeOrUniversity', name: 'University of Houston' },
+    })} />
+  </head>
+
+  <body>
+    <a href="#main" class="skip">Skip to content</a>
+
+    <!-- Background layer, drawn per design in global.css -->
+    <div class="ambient" aria-hidden="true"></div>
+
+    <!-- Field of dots that bends away from the pointer -->
+    <PointerField />
+
+    <!-- Glow that tracks the pointer -->
+    <div class="spotlight" aria-hidden="true"></div>
+
+    <!-- Scroll-progress bar pinned to the top -->
+    <div class="progress" aria-hidden="true"><span></span></div>
+
+    <slot />
+
+    <Palette preview={preview} />
+    {preview && <DesignDock />}
+
+    <div class="toast" role="status" aria-live="polite" data-toast></div>
+
+    <script>
+      const root = document.documentElement;
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+      // ── 1. Reveal elements as they scroll into view ───────────
+      const reveals = document.querySelectorAll('[data-reveal]');
+
+      if (reduced) {
+        reveals.forEach((el) => el.classList.add('is-visible'));
+      } else {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add('is-visible');
+              io.unobserve(entry.target); // reveal once, then stop watching
+            }
+          },
+          { rootMargin: '0px 0px -12% 0px', threshold: 0.12 }
+        );
+        reveals.forEach((el) => io.observe(el));
+
+        // Failsafe: if anything is still hidden after 5s (an observer that
+        // never fired, a mid-scroll restore), show it rather than lose content.
+        setTimeout(() => {
+          reveals.forEach((el) => el.classList.add('is-visible'));
+        }, 5000);
+      }
+
+      // ── 2. Scroll progress bar ────────────────────────────────
+      const bar = document.querySelector('.progress span');
+      const nav = document.querySelector('[data-nav]');
+      let frame = null;
+
+      function onScroll() {
+        if (frame) return; // coalesce to one update per frame
+        frame = requestAnimationFrame(() => {
+          frame = null;
+          const max = root.scrollHeight - window.innerHeight;
+          const pct = max > 0 ? window.scrollY / max : 0;
+          if (bar) bar.style.transform = `scaleX(${pct})`;
+          if (nav) nav.classList.toggle('is-stuck', window.scrollY > 40);
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // ── 3. Pointer effects (skipped on touch / reduced motion) ──
+      const spot = document.querySelector('.spotlight');
+
+      if (fine && !reduced) {
+        // 3a. Background glow that eases toward the cursor
+        let tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+        let cx = tx, cy = ty, raf = null;
+
+        function glide() {
+          cx += (tx - cx) * 0.085;
+          cy += (ty - cy) * 0.085;
+          spot.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+          raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.5
+            ? requestAnimationFrame(glide)
+            : null;
+        }
+
+        // 3b. Card borders light up under the cursor
+        let cardFrame = null;
+
+        window.addEventListener('pointermove', (e) => {
+          tx = e.clientX;
+          ty = e.clientY;
+          if (spot && !raf) raf = requestAnimationFrame(glide);
+
+          if (cardFrame) return;
+          cardFrame = requestAnimationFrame(() => {
+            cardFrame = null;
+            const card = e.target instanceof Element ? e.target.closest('.card') : null;
+            if (!card) return;
+            const r = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+            card.style.setProperty('--my', `${e.clientY - r.top}px`);
+          });
+        }, { passive: true });
+        if (spot) glide();
+
+        // 3c. Magnetic buttons: lean toward the cursor, spring back on leave
+        document.querySelectorAll('[data-magnetic]').forEach((el) => {
+          el.addEventListener('pointermove', (e) => {
+            const r = el.getBoundingClientRect();
+            el.style.setProperty('--tx', `${((e.clientX - r.left) / r.width - 0.5) * 12}px`);
+            el.style.setProperty('--ty', `${((e.clientY - r.top) / r.height - 0.5) * 10}px`);
+          });
+          el.addEventListener('pointerleave', () => {
+            el.style.setProperty('--tx', '0px');
+            el.style.setProperty('--ty', '0px');
+          });
+        });
+      } else if (spot) {
+        spot.remove();
+      }
+
+      // ── 4. Toast: document.dispatchEvent(new CustomEvent('toast', { detail })) ──
+      const toast = document.querySelector('[data-toast]');
+      let toastTimer = null;
+      document.addEventListener('toast', (e) => {
+        if (!toast) return;
+        toast.textContent = e.detail;
+        toast.classList.add('is-on');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('is-on'), 1800);
+      });
+
+      // ── 5. Copy-to-clipboard buttons ──────────────────────────
+      document.querySelectorAll('[data-copy]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(btn.dataset.copy);
+            document.dispatchEvent(new CustomEvent('toast', { detail: 'Copied to clipboard' }));
+          } catch {
+            document.dispatchEvent(new CustomEvent('toast', { detail: 'Copy failed. Select the text instead.' }));
+          }
+        });
+      });
+
+      // ── 6. Design switching ───────────────────────────────────
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      function syncThemeColor() {
+        const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+        if (themeMeta && bg) themeMeta.setAttribute('content', bg);
+      }
+      syncThemeColor();
+
+      document.addEventListener('design:set', (e) => {
+        const id = e.detail;
+        const apply = () => {
+          root.dataset.theme = id;
+          syncThemeColor();
+          document.dispatchEvent(new CustomEvent('design:change', { detail: id }));
+        };
+        if (document.startViewTransition && !reduced) document.startViewTransition(apply);
+        else apply();
+        try { localStorage.setItem('design', id); } catch {}
+      });
+    </script>
+  </body>
+</html>

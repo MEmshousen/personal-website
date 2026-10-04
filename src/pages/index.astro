@@ -1,0 +1,30 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import Skills from '../components/Skills.astro';
+import Timeline from '../components/Timeline.astro';
+import Projects from '../components/Projects.astro';
+import Hobbies from '../components/Hobbies.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import { profile } from '../data/content.js';
+---
+
+<Base
+  title={`${profile.name} — ${profile.title}, ${profile.disciplines}`}
+  description={profile.tagline}
+>
+  <Nav />
+  <main id="main">
+    <Hero />
+    <About />
+    <Skills />
+    <Timeline />
+    <Projects />
+    <Hobbies />
+    <Contact />
+  </main>
+  <Footer />
+</Base>

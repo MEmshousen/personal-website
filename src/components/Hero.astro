@@ -1,0 +1,369 @@
+---
+import { profile, hobbies } from '../data/content.js';
+
+const photoHref = `${import.meta.env.BASE_URL}/${profile.photo}`.replace(/\/+/g, '/');
+const resumeHref = `${import.meta.env.BASE_URL}/${profile.resume}`.replace(/\/+/g, '/');
+
+// Split the name into two lines of individually animated letters
+const [first, ...rest] = profile.name.split(' ');
+let n = 0;
+const lines = [first, rest.join(' ')]
+  .filter(Boolean)
+  .map((text) => [...text].map((ch) => ({ ch, i: n++ })));
+
+const facts = [
+  { term: 'Currently', value: profile.title },
+  { term: 'At', value: profile.employer },
+  { term: 'Based', value: profile.location },
+].filter((f) => f.value);
+
+// "Music, crochet, reading" → sentence case for the fact sheet
+const pastimes = hobbies.items.map((h) => h.name.toLowerCase()).join(', ');
+---
+
+<section class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div class="hero-main">
+      <p class="kicker" data-reveal>{profile.title} · {profile.disciplines}</p>
+
+      <h1 class="name" data-name>
+        <span class="sr-only">{profile.name}</span>
+        {lines.map((line) => (
+          <span class="line" aria-hidden="true">
+            {line.map(({ ch, i }) => <span class="ch" style={`--i: ${i}`}>{ch}</span>)}
+          </span>
+        ))}
+      </h1>
+
+      <!-- Rotating role line; JS decodes each new role letter by letter -->
+      <p class="rotator" data-reveal style="--reveal-delay: 420ms">
+        <span class="rotator-prefix">I work in</span>
+        <span class="sr-only">{profile.roles.join(', ')}</span>
+        <span class="rotator-slot" aria-hidden="true">
+          <span class="rotator-text" data-rotator data-roles={JSON.stringify(profile.roles)}>{profile.roles[0]}</span>
+          <span class="caret"></span>
+        </span>
+      </p>
+
+      <p class="tagline" data-reveal style="--reveal-delay: 500ms">{profile.tagline}</p>
+
+      <div class="actions" data-reveal style="--reveal-delay: 580ms">
+        <a class="btn" href="#projects" data-magnetic>
+          See my work
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+        <a class="link" href={resumeHref} download>Résumé</a>
+        <a class="link" href={profile.links.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a class="link" href={profile.links.github} target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+
+    <div class="side">
+      {profile.photo && (
+        <figure class="portrait" data-reveal style="--reveal-delay: 300ms">
+          <img
+            src={photoHref}
+            alt={`Portrait of ${profile.name}`}
+            width="800"
+            height="1000"
+            fetchpriority="high"
+          />
+        </figure>
+      )}
+
+    <!-- Fact sheet: the short version -->
+    <aside class="card sheet" aria-label="At a glance" data-reveal style="--reveal-delay: 660ms">
+      <dl>
+        {facts.map((f) => (
+          <div class="row">
+            <dt>{f.term}</dt>
+            <dd>{f.value}</dd>
+          </div>
+        ))}
+        <div class="row">
+          <dt>{hobbies.heading}</dt>
+          <dd class="off">
+            <span class="mini-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <a href="#hobbies">{pastimes}</a>
+          </dd>
+        </div>
+      </dl>
+    </aside>
+    </div>
+  </div>
+</section>
+
+<script>
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  // ── 1. Rotating role, decoded like a cipher ────────────────
+  const slot = document.querySelector('[data-rotator]');
+  const roles = slot ? JSON.parse(slot.dataset.roles) : [];
+  const GLYPHS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#/<>_';
+
+  function decode(el, to) {
+    const length = Math.max(el.textContent.length, to.length);
+    const duration = 650;
+    const start = performance.now();
+
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const settled = Math.floor(t * length); // letters left of this are final
+      let out = '';
+      for (let i = 0; i < length; i++) {
+        if (i < settled) out += to[i] ?? '';
+        else if (to[i] === ' ') out += ' ';
+        else if (i < to.length) out += GLYPHS[(Math.random() * GLYPHS.length) | 0];
+      }
+      el.textContent = t < 1 ? out : to;
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  if (slot && roles.length > 1 && !reduced) {
+    let i = 0;
+    setInterval(() => {
+      i = (i + 1) % roles.length;
+      decode(slot, roles[i]);
+    }, 2800);
+  }
+
+  // ── 2. Name letters react to how close the pointer is ──────
+  // Each letter gets --p from 0 (far) to 1 (under the cursor); every
+  // design maps that to something different in the CSS below.
+  const name = document.querySelector('[data-name]');
+  const letters = name ? [...name.querySelectorAll('.ch')] : [];
+
+  if (name && fine && !reduced) {
+    const RADIUS = 190;
+    let raf = null;
+
+    name.addEventListener('pointermove', (e) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        for (const el of letters) {
+          const r = el.getBoundingClientRect();
+          const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+          el.style.setProperty('--p', Math.max(0, 1 - d / RADIUS).toFixed(3));
+        }
+      });
+    });
+
+    name.addEventListener('pointerleave', () => {
+      letters.forEach((el) => el.style.setProperty('--p', '0'));
+    });
+  }
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: min(90svh, 880px);
+    padding-block: clamp(3.5rem, 10vh, 7rem) clamp(4.5rem, 13vh, 8.5rem);
+  }
+
+  .hero-grid {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 4rem);
+    align-items: end;
+  }
+  @media (min-width: 1080px) {
+    .hero-grid { grid-template-columns: minmax(0, 1fr) 19.5rem; }
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 1.4rem;
+  }
+
+  /* ── Name ───────────────────────────────────────────────── */
+  .name {
+    font-size: calc(clamp(2.9rem, 10.5vw, 6.6rem) * var(--name-scale));
+    line-height: 0.96;
+    margin-bottom: 1.5rem;
+    cursor: default;
+  }
+  .line { display: block; }
+  .ch {
+    --p: 0;
+    display: inline-block;
+    white-space: pre;
+    transition: font-weight 0.3s var(--ease), color 0.3s var(--ease),
+                transform 0.3s var(--ease);
+  }
+  /* Letters rise in one after another on load */
+  :global(.js) .ch {
+    animation: ch-in 0.9s var(--ease) backwards;
+    animation-delay: calc(var(--i) * 38ms + 100ms);
+  }
+  @keyframes ch-in {
+    from { opacity: 0; transform: translateY(0.45em) rotate(4deg); }
+  }
+
+  /* Dossier: the surname is set in italic; letters lift and take ink */
+  :global(html[data-theme='dossier']) .line:last-child { font-style: italic; }
+  :global(html[data-theme='dossier']) .ch {
+    color: color-mix(in srgb, var(--accent) calc(var(--p) * 100%), var(--text));
+    transform: translateY(calc(var(--p) * -0.07em));
+  }
+
+  /* Signal: the surname is an outline that fills in under the pointer */
+  :global(html[data-theme='signal']) .name { font-weight: 600; }
+  :global(html[data-theme='signal']) .line:last-child .ch {
+    color: color-mix(in srgb, var(--accent) calc(var(--p) * 100%), transparent);
+    -webkit-text-stroke: 1.5px var(--accent);
+  }
+  @media (hover: none) {
+    /* No pointer to fill it, so show it filled */
+    :global(html[data-theme='signal']) .line:last-child .ch { color: var(--accent); }
+  }
+
+  /* Afterglow: letters swell in weight toward the pointer */
+  :global(html[data-theme='afterglow']) .ch { font-weight: calc(520 + var(--p) * 270); }
+  :global(html[data-theme='afterglow']) .line:last-child .ch { color: var(--accent); }
+
+  /* ── Rotating role ──────────────────────────────────────── */
+  .rotator {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: clamp(1.1rem, 3vw, 1.5rem);
+    font-weight: 500;
+    margin-bottom: 1.3rem;
+  }
+  .rotator-prefix { color: var(--faint); }
+  .rotator-slot {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+  }
+  .rotator-text { color: var(--text); }
+  :global(html[data-theme='signal']) .rotator-text {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--accent);
+  }
+  .caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.05em;
+    background: var(--accent);
+    animation: blink 1.1s steps(2, start) infinite;
+    transform: translateY(0.14em);
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .tagline {
+    max-width: 54ch;
+    font-size: clamp(1rem, 2.1vw, 1.14rem);
+    color: var(--muted);
+    margin-bottom: 2.3rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.6rem;
+  }
+
+  /* ── Portrait + fact sheet column ───────────────────────── */
+  .side {
+    display: grid;
+    gap: 1rem;
+  }
+  .portrait {
+    margin: 0;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface-2);
+    box-shadow: var(--card-shadow);
+  }
+  .portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--ease);
+  }
+  .portrait:hover img { transform: scale(1.045); }
+
+  /* ── Fact sheet ─────────────────────────────────────────── */
+  .sheet { padding: 0.35rem var(--card-pad-x); }
+  .row {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .row:last-child { border-bottom: 0; }
+  .row dt {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--faint);
+  }
+  .row dd {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .off {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .off a::first-letter { text-transform: uppercase; }
+  .off a { transition: color 0.3s var(--ease); }
+  .off a:hover { color: var(--accent); }
+  /* Tiny equaliser, always playing */
+  .mini-eq {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 0.85rem;
+    flex-shrink: 0;
+  }
+  .mini-eq i {
+    width: 2px;
+    height: 100%;
+    background: var(--accent);
+    transform-origin: 50% 100%;
+    animation: mini-eq 1.1s var(--ease-in-out) infinite alternate;
+  }
+  .mini-eq i:nth-child(2) { animation-delay: -0.45s; animation-duration: 0.8s; }
+  .mini-eq i:nth-child(3) { animation-delay: -0.8s; animation-duration: 1.3s; }
+  .mini-eq i:nth-child(4) { animation-delay: -0.2s; animation-duration: 0.95s; }
+  @keyframes mini-eq {
+    from { transform: scaleY(0.25); }
+    to   { transform: scaleY(1); }
+  }
+
+  @media (max-width: 1079px) {
+    /* Below the two-column layout the portrait shrinks and sits beside
+       the sheet, which becomes a row of facts */
+    .side {
+      grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .sheet dl {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+      column-gap: 2rem;
+    }
+    .row { border-bottom: 0; }
+  }
+</style>

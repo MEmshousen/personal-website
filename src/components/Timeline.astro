@@ -1,0 +1,313 @@
+---
+import { experience } from '../data/content.js';
+
+// How many bullets show before the "Show more" disclosure
+const LEAD = 2;
+
+function kindOf(item) {
+  if (item.education) return 'Education';
+  if (item.volunteer) return 'Volunteer';
+  return 'Work';
+}
+---
+
+<section class="section" id="experience">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal><span class="eyebrow-num">03</span>{experience.heading}</p>
+    <h2 class="section-title" data-reveal style="--reveal-delay: 60ms">
+      Where I've <em class="em">been.</em>
+    </h2>
+
+    <div class="timeline" data-timeline>
+      <!-- Static rail + accent fill that grows with scroll progress -->
+      <span class="rail" aria-hidden="true">
+        <span class="rail-fill" data-rail></span>
+      </span>
+
+      <ol class="items">
+        {experience.items.map((item, i) => {
+          const lead = item.bullets.slice(0, LEAD);
+          const more = item.bullets.slice(LEAD);
+          return (
+            <li class="item" data-reveal style={`--reveal-delay: ${i * 90}ms`}>
+              <span class={`node ${item.current ? 'is-current' : ''}`} aria-hidden="true"></span>
+
+              <article class="card entry">
+                <header class="entry-head">
+                  <div>
+                    <h3 class="role">{item.role}</h3>
+                    <p class="org">
+                      <span class="org-name">{item.org}</span>
+                      {item.meta && <span class="org-meta"> · {item.meta}</span>}
+                    </p>
+                  </div>
+
+                  <div class="when">
+                    <span class={`range ${item.current ? 'is-current' : ''}`}>
+                      {item.start} to {item.end}
+                    </span>
+                    <span class="kind">{kindOf(item)}{item.location && ` · ${item.location}`}</span>
+                  </div>
+                </header>
+
+                <ul class="bullets">
+                  {lead.map((b) => <li>{b}</li>)}
+                </ul>
+
+                {more.length > 0 && (
+                  <div class="more" id={`more-${i}`} data-more>
+                    <div class="more-inner">
+                      <ul class="bullets">
+                        {more.map((b) => <li>{b}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                <footer class="entry-foot">
+                  {item.tags?.length > 0 && (
+                    <ul class="tags">
+                      {item.tags.map((t) => <li>{t}</li>)}
+                    </ul>
+                  )}
+                  {more.length > 0 && (
+                    <button
+                      class="link more-btn"
+                      type="button"
+                      aria-expanded="false"
+                      aria-controls={`more-${i}`}
+                      data-more-btn
+                      data-more-count={more.length}
+                    >
+                      Show {more.length} more
+                    </button>
+                  )}
+                </footer>
+              </article>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<script>
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── 1. Grow the accent rail as the timeline passes the viewport ──
+  const wrapEl = document.querySelector('[data-timeline]');
+  const fill = document.querySelector('[data-rail]');
+
+  if (wrapEl && fill) {
+    if (reduced) {
+      fill.style.transform = 'scaleY(1)';
+    } else {
+      let frame = null;
+
+      function update() {
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = null;
+          const rect = wrapEl.getBoundingClientRect();
+          const anchor = window.innerHeight * 0.55; // fill up to mid-screen
+          const progress = (anchor - rect.top) / rect.height;
+          fill.style.transform = `scaleY(${Math.min(Math.max(progress, 0), 1)})`;
+        });
+      }
+
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    }
+  }
+
+  // ── 2. "Show more" disclosures ─────────────────────────────
+  document.querySelectorAll('[data-more-btn]').forEach((btn) => {
+    const region = document.getElementById(btn.getAttribute('aria-controls'));
+    const inner = region?.firstElementChild;
+    if (!region || !inner) return;
+
+    // Collapsed bullets stay out of the tab order and the accessibility tree
+    inner.inert = true;
+
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      btn.textContent = open ? 'Show less' : `Show ${btn.dataset.moreCount} more`;
+      region.classList.toggle('is-open', open);
+      inner.inert = !open;
+    });
+  });
+</script>
+
+<style>
+  .timeline {
+    position: relative;
+    margin-top: 3.25rem;
+    padding-left: 2.4rem;
+  }
+
+  .rail {
+    position: absolute;
+    top: 0.65rem;
+    bottom: 0.65rem;
+    left: 0.4rem;
+    width: 1px;
+    background: var(--line-2);
+    overflow: hidden;
+  }
+  .rail-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: 50% 0;
+  }
+
+  .items { display: grid; gap: 1.1rem; }
+  :global(html[data-theme='dossier']) .items { gap: 0.5rem; }
+
+  .item { position: relative; }
+
+  /* Dot on the rail, aligned with each entry's first line */
+  .node {
+    position: absolute;
+    top: 1.85rem;
+    left: -2.4rem;
+    width: 11px; height: 11px;
+    margin-left: 1px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--line-2);
+    z-index: 1;
+    transition: border-color 0.4s var(--ease), box-shadow 0.4s var(--ease),
+                background-color 0.4s var(--ease);
+  }
+  .node.is-current {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .item:hover .node {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 5px var(--accent-soft);
+  }
+
+  .entry { padding: 1.5rem var(--card-pad-x) 1.35rem; }
+
+  .entry-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .role {
+    font-size: calc(1.14rem * var(--title-scale));
+    margin-bottom: 0.3rem;
+  }
+  :global(html[data-theme='dossier']) .role { font-size: 1.7rem; }
+
+  .org { font-size: 0.93rem; }
+  .org-name { font-weight: 600; color: var(--accent); }
+  .org-meta { color: var(--faint); }
+
+  .when {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .range {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.84rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .range.is-current { color: var(--accent); }
+  .kind {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.8rem;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+
+  .bullets {
+    display: grid;
+    gap: 0.62rem;
+    max-width: 78ch;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .bullets li {
+    position: relative;
+    padding-left: 1.15rem;
+  }
+  /* Short dash instead of a bullet glyph */
+  .bullets li::before {
+    content: '';
+    position: absolute;
+    top: 0.75em;
+    left: 0;
+    width: 0.55rem;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* ── Disclosure: extra bullets slide open ───────────────── */
+  .more .bullets { padding-top: 0.62rem; }
+  :global(.js) .more {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.55s var(--ease);
+  }
+  :global(.js) .more.is-open { grid-template-rows: 1fr; }
+  :global(.js) .more-inner {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.4s var(--ease);
+  }
+  :global(.js) .more.is-open .more-inner { opacity: 1; }
+
+  .entry-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem 1.5rem;
+    margin-top: 1.2rem;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.4rem;
+  }
+  .tags li {
+    padding: 0.2rem 0.6rem;
+    border-radius: calc(var(--radius-sm) / 2 + 2px);
+    background: var(--surface-2);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  /* The button only makes sense when the script can open the region */
+  .more-btn { display: none; font-size: 0.86rem; }
+  :global(.js) .more-btn { display: inline-flex; }
+
+  @media (max-width: 620px) {
+    .timeline { padding-left: 1.6rem; }
+    .node { left: -1.6rem; }
+    .when { text-align: left; }
+  }
+</style>

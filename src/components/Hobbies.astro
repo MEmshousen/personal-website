@@ -1,0 +1,241 @@
+---
+import { hobbies } from '../data/content.js';
+
+// Turn any open.spotify.com link into its embeddable player URL
+function spotifyEmbed(url) {
+  const match = url?.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|track|artist|show|episode)\/([A-Za-z0-9]+)/);
+  return match ? `https://open.spotify.com/embed/${match[1]}/${match[2]}` : null;
+}
+const player = spotifyEmbed(hobbies.spotify);
+
+// Equaliser bars: resting heights, so the row has a shape even when still
+const bars = [0.45, 0.7, 0.55, 0.9, 0.65, 1, 0.75, 0.5, 0.85, 0.6, 0.95, 0.7, 0.5, 0.8, 0.6, 0.4];
+// Book spines: [height in rem, width in rem]
+const spines = [[4.2, 0.9], [5.4, 1.2], [4.7, 0.8], [5.9, 1.4], [4.4, 1], [5.1, 0.9], [3.8, 1.3]];
+---
+
+<section class="section" id="hobbies">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal><span class="eyebrow-num">05</span>{hobbies.heading}</p>
+    <h2 class="section-title" data-reveal style="--reveal-delay: 60ms">
+      Away from the <em class="em">keyboard.</em>
+    </h2>
+    <p class="section-blurb" data-reveal style="--reveal-delay: 120ms">{hobbies.blurb}</p>
+
+    <ul class="grid">
+      {hobbies.items.map((hobby, i) => (
+        <li
+          class={`card hobby hobby-${hobby.id}`}
+          data-reveal
+          style={`--reveal-delay: ${i * 100}ms`}
+        >
+          <div class="art" aria-hidden="true">
+            {hobby.id === 'music' && (
+              <div class="eq" data-eq>
+                {bars.map((height, bi) => (
+                  <span class="bar" style={`--h: ${height}; --i: ${bi}`}><i></i></span>
+                ))}
+              </div>
+            )}
+
+            {hobby.id === 'crochet' && (
+              <svg class="yarn" viewBox="0 0 320 110" fill="none" stroke-linecap="round">
+                <!-- A row of stitches that draws itself on hover -->
+                <path
+                  class="thread"
+                  pathLength="1"
+                  d="M96 78 q 12 -30 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0"
+                />
+                <g class="ball">
+                  <circle cx="58" cy="60" r="38" />
+                  <path d="M26 44c20 6 44 6 62-6M22 64c24 8 50 6 72-8M30 84c20 4 40 2 56-10" />
+                  <path d="M44 26c-8 22-6 46 6 68M66 23c-6 24-2 50 12 70" />
+                </g>
+              </svg>
+            )}
+
+            {hobby.id === 'reading' && (
+              <div class="shelf">
+                {spines.map(([height, width], si) => (
+                  <span class="spine" style={`--h: ${height}rem; --w: ${width}rem; --i: ${si}`}></span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <h3 class="hobby-name">{hobby.name}</h3>
+          <p class="hobby-note">{hobby.note}</p>
+
+          {hobby.id === 'music' && player && (
+            <iframe
+              class="player"
+              src={player}
+              title="Spotify player"
+              height="152"
+              loading="lazy"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            ></iframe>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<script>
+  // ── Equaliser bars rise toward the pointer as it moves across the card ──
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const eq = document.querySelector('[data-eq]');
+  const card = eq?.closest('.hobby');
+
+  if (eq && card && fine && !reduced) {
+    const bars = [...eq.querySelectorAll('.bar')];
+    let raf = null;
+
+    card.addEventListener('pointermove', (e) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        for (const bar of bars) {
+          const r = bar.getBoundingClientRect();
+          const d = Math.abs(e.clientX - (r.left + r.width / 2));
+          bar.style.setProperty('--p', Math.max(0, 1 - d / 150).toFixed(3));
+        }
+      });
+    });
+
+    card.addEventListener('pointerleave', () => {
+      bars.forEach((bar) => bar.style.setProperty('--p', '0'));
+    });
+  }
+</script>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 3rem;
+  }
+  @media (min-width: 760px) {
+    /* Music takes the tall left column; the other two stack beside it */
+    .grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+    .hobby-music { grid-row: span 2; }
+    :global(html[data-theme='dossier']) .grid { column-gap: clamp(2rem, 5vw, 4rem); }
+  }
+
+  .hobby {
+    display: flex;
+    flex-direction: column;
+    padding: 1.6rem var(--card-pad-x) 1.7rem;
+    overflow: hidden;
+  }
+
+  .art {
+    display: flex;
+    align-items: flex-end;
+    min-height: 6.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .hobby-music .art { flex: 1; min-height: 9rem; }
+
+  .hobby-name {
+    font-size: calc(1.5rem * var(--title-scale));
+    margin-bottom: 0.5rem;
+  }
+  .hobby-note {
+    max-width: 44ch;
+    color: var(--muted);
+    font-size: 0.98rem;
+  }
+
+  .player {
+    width: 100%;
+    margin-top: 1.4rem;
+    border: 0;
+    border-radius: 12px;
+  }
+
+  /* ── Music: equaliser ───────────────────────────────────── */
+  .eq {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(4px, 1vw, 9px);
+    width: 100%;
+    height: 100%;
+    min-height: 9rem;
+  }
+  /* Outer span: lifted by the pointer (--p). Inner bar: always dancing. */
+  .bar {
+    --p: 0;
+    flex: 1;
+    height: calc(var(--h) * 100%);
+    transform: scaleY(calc(0.55 + var(--p) * 0.75));
+    transform-origin: 50% 100%;
+    transition: transform 0.35s var(--spring);
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: 999px 999px 2px 2px;
+    background: linear-gradient(to top, var(--accent-soft), var(--accent));
+    transform-origin: 50% 100%;
+    animation: eq 1.2s var(--ease-in-out) infinite alternate;
+    animation-delay: calc(var(--i) * -0.37s);
+    animation-duration: calc(0.8s + var(--h) * 0.7s);
+  }
+  @keyframes eq {
+    from { transform: scaleY(0.3); }
+    to   { transform: scaleY(1); }
+  }
+
+  /* ── Crochet: yarn ball and a row of stitches ───────────── */
+  .yarn {
+    width: min(100%, 20rem);
+    height: auto;
+    stroke: var(--accent);
+    stroke-width: 2;
+    overflow: visible;
+  }
+  .ball {
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    transition: transform 0.9s var(--ease);
+  }
+  .ball circle { fill: var(--accent-soft); }
+  .hobby:hover .ball { transform: rotate(-38deg); }
+  .thread {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0.72;
+    transition: stroke-dashoffset 1.3s var(--ease);
+  }
+  .hobby:hover .thread { stroke-dashoffset: 0; }
+
+  /* ── Reading: a shelf of spines ─────────────────────────── */
+  .shelf {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid var(--line-2);
+  }
+  .spine {
+    width: var(--w);
+    height: var(--h);
+    border-radius: 2px 2px 0 0;
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--line-2);
+    transform-origin: 100% 100%;
+    transition: transform 0.55s var(--spring), background-color 0.4s var(--ease);
+    transition-delay: calc(var(--i) * 35ms);
+  }
+  .spine:nth-child(3n + 1) { background: var(--accent-soft); }
+  /* On hover the row shuffles and one book is pulled out */
+  .hobby:hover .spine { transform: translateY(-4px); }
+  .hobby:hover .spine:nth-child(4) {
+    background: var(--accent);
+    transform: translateY(-1rem);
+  }
+  .hobby:hover .spine:last-child { transform: rotate(9deg); }
+</style>

@@ -1,0 +1,208 @@
+---
+import { projects } from '../data/content.js';
+
+const pad = (n) => String(n).padStart(2, '0');
+---
+
+<section class="section" id="projects">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal><span class="eyebrow-num">04</span>{projects.heading}</p>
+    <h2 class="section-title" data-reveal style="--reveal-delay: 60ms">
+      Things I've <em class="em">built.</em>
+    </h2>
+    <p class="section-blurb" data-reveal style="--reveal-delay: 120ms">{projects.blurb}</p>
+
+    <ul class="cards">
+      {projects.items.map((p, i) => (
+        <li
+          class={`card project ${p.featured ? 'is-featured' : ''}`}
+          data-reveal
+          data-tilt
+          style={`--reveal-delay: ${i * 100}ms`}
+        >
+          <span class="glow" aria-hidden="true"></span>
+          <div class="project-inner">
+            <header class="project-head">
+              <span class="index">{pad(i + 1)}</span>
+              <span class="year">{p.year}</span>
+              {p.featured && <span class="flag">First place</span>}
+            </header>
+
+            <h3 class="project-title">{p.title}</h3>
+            <p class="project-summary">{p.summary}</p>
+
+            <ul class="stack">
+              {p.stack.map((s) => <li>{s}</li>)}
+            </ul>
+
+            {p.links?.length > 0 && (
+              <div class="project-links">
+                {p.links.map((l) => (
+                  <a class="link" href={l.url} target="_blank" rel="noopener noreferrer">
+                    {l.label}
+                    <svg viewBox="0 0 14 14" width="12" height="12" fill="none" aria-hidden="true">
+                      <path d="M4 10 10 4M10 4H5.5M10 4v4.5" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<script>
+  // ── Tilt each card toward the pointer (pointer devices only) ──
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (fine && !reduced) {
+    const MAX = 2.5; // degrees
+
+    document.querySelectorAll('[data-tilt]').forEach((card) => {
+      let raf = null;
+
+      card.addEventListener('pointermove', (e) => {
+        if (raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = null;
+          const r = card.getBoundingClientRect();
+          // Normalise pointer position to -1…1 on each axis
+          const px = (e.clientX - r.left) / r.width * 2 - 1;
+          const py = (e.clientY - r.top) / r.height * 2 - 1;
+          card.style.setProperty('--rx', `${(-py * MAX).toFixed(2)}deg`);
+          card.style.setProperty('--ry', `${(px * MAX).toFixed(2)}deg`);
+        });
+      });
+
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      });
+    });
+  }
+</script>
+
+<style>
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 3rem;
+  }
+  @media (min-width: 760px) {
+    /* Uneven columns; the featured project takes a full row of its own */
+    .cards { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+    .project.is-featured { grid-column: 1 / -1; }
+    /* Without boxes, the columns need a wider gutter to stay apart */
+    :global(html[data-theme='dossier']) .cards { column-gap: clamp(2rem, 5vw, 4rem); }
+  }
+
+  .project {
+    --rx: 0deg;
+    --ry: 0deg;
+
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  }
+  /* Paper doesn't tilt */
+  :global(html[data-theme='dossier']) .project {
+    transform: none;
+    overflow: visible;
+  }
+
+  /* Glow that follows the pointer across the card (--mx/--my from Base.astro) */
+  .glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      420px circle at var(--mx, 50%) var(--my, 50%),
+      var(--accent-soft),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.45s var(--ease);
+    pointer-events: none;
+  }
+  .project:hover .glow { opacity: 1; }
+  :global(html[data-theme='dossier']) .glow { display: none; }
+
+  .project-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.6rem var(--card-pad-x) 1.6rem;
+    transform: translateZ(26px);
+  }
+
+  .project-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin-bottom: 1.1rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--faint);
+  }
+  .index { color: var(--accent); }
+  /* Plain-text flag in place of a pill badge */
+  .flag {
+    margin-left: auto;
+    color: var(--accent);
+  }
+  .flag::before { content: '★ '; }
+
+  .project-title {
+    font-size: calc(1.3rem * var(--title-scale));
+    margin-bottom: 0.7rem;
+    transition: color 0.3s var(--ease);
+  }
+  .is-featured .project-title {
+    font-size: calc(clamp(1.6rem, 3.6vw, 2.2rem) * var(--title-scale));
+  }
+  :global(html[data-theme='dossier']) .project:hover .project-title {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .project-summary {
+    max-width: 62ch;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.62;
+    /* Push the stack row to the bottom of every card so they line up */
+    flex: 1;
+  }
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.4rem;
+    margin-top: 1.4rem;
+  }
+  .stack li {
+    padding: 0.2rem 0.6rem;
+    border-radius: calc(var(--radius-sm) / 2 + 2px);
+    background: var(--surface-2);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .project-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    margin-top: 1.3rem;
+  }
+</style>

@@ -1,0 +1,56 @@
+---
+import Base from '../layouts/Base.astro';
+import { profile } from '../data/content.js';
+
+const home = `${import.meta.env.BASE_URL}/`.replace(/\/+/g, '/');
+---
+
+<Base title={`Page not found · ${profile.name}`} description="That page doesn't exist.">
+  <main id="main" class="lost">
+    <div class="wrap">
+      <p class="eyebrow"><span class="eyebrow-num">404</span>Page not found</p>
+      <h1 class="lost-title">Nothing on file <em class="em">at this address.</em></h1>
+      <p class="lost-copy">
+        The link may be out of date, or the page may have moved. Everything on this
+        site lives on one page, so the way back is short.
+      </p>
+      <div class="lost-actions">
+        <a class="btn" href={home} data-magnetic>
+          Back to the home page
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+        <a class="link" href={`mailto:${profile.email}`}>Report a broken link</a>
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .lost {
+    display: flex;
+    align-items: center;
+    min-height: 100dvh;
+    padding-block: 5rem;
+  }
+  .lost-title {
+    font-size: calc(clamp(2.4rem, 8vw, 5rem) * var(--title-scale));
+    line-height: 1;
+    max-width: 16ch;
+    margin-bottom: 1.5rem;
+  }
+  .lost-copy {
+    max-width: 48ch;
+    color: var(--muted);
+    font-size: 1.06rem;
+    margin-bottom: 2.2rem;
+  }
+  .lost-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.6rem;
+  }
+</style>

@@ -1,0 +1,118 @@
+---
+// A fixed canvas of faint dots behind the page. Dots close to the pointer
+// warm to the accent colour and ease slightly aside, then settle back.
+// Deliberately subtle. Pointer devices only, and off under reduced motion.
+---
+
+<canvas class="field" data-field aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.querySelector('[data-field]');
+  const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ctx = canvas?.getContext('2d');
+
+  if (canvas && ctx && fine && !reduced) {
+    const GAP = 34;       // px between dots
+    const RADIUS = 120;   // how far the pointer's influence reaches
+    const PUSH = 6;       // max px a dot is displaced
+    const FAR = -9999;
+
+    let dots = [];
+    let w = 0, h = 0;
+    let px = FAR, py = FAR;
+    let raf = null;
+    let base = '#fff', accent = '#fff';
+
+    function readColors() {
+      const cs = getComputedStyle(document.documentElement);
+      base = cs.getPropertyValue('--text').trim() || base;
+      accent = cs.getPropertyValue('--accent').trim() || accent;
+    }
+
+    function build() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Centre the grid so the margins match on both sides
+      const cols = Math.floor(w / GAP) + 1;
+      const rows = Math.floor(h / GAP) + 1;
+      const x0 = (w - (cols - 1) * GAP) / 2;
+      const y0 = (h - (rows - 1) * GAP) / 2;
+
+      dots = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          dots.push({ x: x0 + c * GAP, y: y0 + r * GAP, ox: 0, oy: 0, vx: 0, vy: 0 });
+        }
+      }
+    }
+
+    function frame() {
+      raf = null;
+      ctx.clearRect(0, 0, w, h);
+      let moving = false;
+
+      for (const d of dots) {
+        const dx = d.x - px;
+        const dy = d.y - py;
+        const dist = Math.hypot(dx, dy);
+
+        // t: 0 at the edge of the pointer's reach, 1 right under it
+        let t = 0, tx = 0, ty = 0;
+        if (dist < RADIUS) {
+          t = 1 - dist / RADIUS;
+          const force = t * t * PUSH;
+          tx = (dx / (dist || 1)) * force;
+          ty = (dy / (dist || 1)) * force;
+        }
+
+        // Spring each dot toward its target offset
+        d.vx = (d.vx + (tx - d.ox) * 0.1) * 0.7;
+        d.vy = (d.vy + (ty - d.oy) * 0.1) * 0.7;
+        d.ox += d.vx;
+        d.oy += d.vy;
+        if (Math.abs(d.vx) + Math.abs(d.vy) > 0.02) moving = true;
+
+        const glow = t;
+        ctx.globalAlpha = glow > 0.02 ? 0.08 + glow * 0.3 : 0.06;
+        ctx.fillStyle = glow > 0.02 ? accent : base;
+        ctx.beginPath();
+        ctx.arc(d.x + d.ox, d.y + d.oy, 1 + glow * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Only keep the loop alive while something is still moving
+      if (moving) raf = requestAnimationFrame(frame);
+    }
+
+    function kick() {
+      if (!raf) raf = requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      px = e.clientX;
+      py = e.clientY;
+      kick();
+    }, { passive: true });
+
+    document.documentElement.addEventListener('pointerleave', () => {
+      px = py = FAR;
+      kick();
+    });
+
+    window.addEventListener('resize', () => { build(); kick(); });
+    document.addEventListener('design:change', () => { readColors(); kick(); });
+
+    document.documentElement.classList.add('has-field');
+    readColors();
+    build();
+    kick();
+  } else {
+    canvas?.remove();
+  }
+</script>

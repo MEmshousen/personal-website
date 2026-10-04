@@ -1,0 +1,104 @@
+---
+// Preview-only switcher for comparing the designs side by side.
+// Base.astro renders it in `npm run dev` only; it never ships to visitors.
+import { site } from '../data/content.js';
+---
+
+<div class="dock" role="group" aria-label="Design preview">
+  <span class="dock-label">Design</span>
+  {site.designs.map((d, i) => (
+    <button class="dock-btn" type="button" data-design={d.id} aria-pressed="false" title={d.note}>
+      <span class={`swatch swatch-${d.id}`} aria-hidden="true"></span>
+      {d.name}
+      <kbd>{i + 1}</kbd>
+    </button>
+  ))}
+</div>
+
+<script>
+  const buttons = [...document.querySelectorAll('[data-design]')];
+
+  function sync() {
+    const current = document.documentElement.dataset.theme;
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.design === current)));
+  }
+
+  function choose(id) {
+    document.dispatchEvent(new CustomEvent('design:set', { detail: id }));
+  }
+
+  buttons.forEach((b) => b.addEventListener('click', () => choose(b.dataset.design)));
+  document.addEventListener('design:change', sync);
+  sync();
+
+  // Number keys 1–3 switch designs, unless you're typing somewhere
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target instanceof HTMLElement && e.target.matches('input, textarea, [contenteditable]')) return;
+    const btn = buttons[Number(e.key) - 1];
+    if (btn) choose(btn.dataset.design);
+  });
+</script>
+
+<style>
+  /* Deliberately not themed: it should look the same over every design */
+  .dock {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+    z-index: var(--z-dock);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: calc(100vw - 1.5rem);
+    padding: 0.3rem;
+    border-radius: 12px;
+    background: #17171a;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 18px 40px -18px rgba(0, 0, 0, 0.7);
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 0.84rem;
+    color: #f2f2f3;
+    transform: translateX(-50%);
+  }
+  .dock-label {
+    padding: 0 0.5rem 0 0.65rem;
+    font-size: 0.74rem;
+    color: #9b9ba3;
+  }
+  .dock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.6rem;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    font-weight: 500;
+    color: #c9c9cf;
+    cursor: pointer;
+    transition: background-color 0.25s ease, color 0.25s ease, scale 0.2s ease;
+  }
+  .dock-btn:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
+  .dock-btn:active { scale: 0.96; }
+  .dock-btn[aria-pressed='true'] { background: #f2f2f3; color: #17171a; }
+  .dock-btn kbd {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 0.68rem;
+    opacity: 0.55;
+  }
+
+  .swatch {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.45);
+  }
+  /* Half background, half accent of each design */
+  .swatch-dossier   { background: linear-gradient(90deg, #f3efe6 50%, #a8301f 50%); }
+  .swatch-signal    { background: linear-gradient(90deg, #0b0e11 50%, #bfe36b 50%); }
+  .swatch-afterglow { background: linear-gradient(90deg, #150e13 50%, #ea7fa0 50%); }
+
+  @media (max-width: 480px) {
+    .dock-label, .dock-btn kbd { display: none; }
+  }
+</style>
