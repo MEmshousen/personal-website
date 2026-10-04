@@ -86,7 +86,6 @@ const pastimes = hobbies.items.map((h) => h.name.toLowerCase()).join(', ');
         <div class="row">
           <dt>{hobbies.heading}</dt>
           <dd class="off">
-            <span class="mini-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
             <a href="#hobbies">{pastimes}</a>
           </dd>
         </div>
@@ -328,28 +327,6 @@ const pastimes = hobbies.items.map((h) => h.name.toLowerCase()).join(', ');
   .off a::first-letter { text-transform: uppercase; }
   .off a { transition: color 0.3s var(--ease); }
   .off a:hover { color: var(--accent); }
-  /* Tiny equaliser, always playing */
-  .mini-eq {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 0.85rem;
-    flex-shrink: 0;
-  }
-  .mini-eq i {
-    width: 2px;
-    height: 100%;
-    background: var(--accent);
-    transform-origin: 50% 100%;
-    animation: mini-eq 1.1s var(--ease-in-out) infinite alternate;
-  }
-  .mini-eq i:nth-child(2) { animation-delay: -0.45s; animation-duration: 0.8s; }
-  .mini-eq i:nth-child(3) { animation-delay: -0.8s; animation-duration: 1.3s; }
-  .mini-eq i:nth-child(4) { animation-delay: -0.2s; animation-duration: 0.95s; }
-  @keyframes mini-eq {
-    from { transform: scaleY(0.25); }
-    to   { transform: scaleY(1); }
-  }
 
   @media (max-width: 1079px) {
     /* Below the two-column layout the portrait shrinks and sits beside

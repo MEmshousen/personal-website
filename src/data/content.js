@@ -34,7 +34,7 @@ export const profile = {
     'Python + SQL',
   ],
   tagline:
-    'I build machine learning pipelines that protect real assets — turning messy data into evidence, intelligence, and decisions.',
+    'I build machine learning pipelines that protect real assets, turning messy data into evidence, intelligence, and decisions.',
   location: 'Houston, Texas · Remote',
   email: 'memshousen@gmail.com',
   links: {
@@ -61,8 +61,8 @@ export const about = {
     `I came to security from the engineering side. I hold a B.S. in Computer Science
      with a minor in Mathematics from the University of Houston, and I spent two years
      teaching programming one-on-one to 50+ students before moving into investigations.
-     That combination — rigorous math, real engineering, and a lot of practice explaining
-     hard things clearly — is what I bring to every case.`,
+     That combination of rigorous math, real engineering, and a lot of practice explaining
+     hard things clearly is what I bring to every case.`,
 
     `As a woman in security, I care about leaving the door open behind me. I led
      CodeCoogs, and I'm now Director of Marketing and a mentor at the Computer Science
@@ -156,7 +156,7 @@ export const experience = {
       tags: ['KQL', 'PowerShell', 'CrowdStrike', 'Microsoft Purview', 'Defender', 'Entra ID', 'Intune', 'Power Automate'],
     },
     {
-      role: 'Data Analyst — Investigation Enablement',
+      role: 'Data Analyst, Investigation Enablement',
       org: 'Control Risks @ Meta',
       meta: 'Global Security & Investigations',
       start: 'Oct 2024',
@@ -196,13 +196,13 @@ export const experience = {
       education: true,
       bullets: [
         'Relevant coursework: Data Structures & Algorithms (C++), Digital Image Processing (Python), Data Science I & II (Python, R), Cybersecurity (Python), Databases (C#, React.js, SQL).',
-        'CodeCoogs Team Lead (2024) — led a student software engineering organization. Member 2022–2024.',
+        'CodeCoogs Team Lead (2024): led a student software engineering organization. Member 2022 to 2024.',
         'Cougar CS member; Freshman Interest Group Ambassador.',
       ],
       tags: ['Algorithms', 'Data Science', 'Cybersecurity', 'Mathematics'],
     },
     {
-      role: 'Director of Marketing & Mentor — Computer Science Association',
+      role: 'Director of Marketing & Mentor, Computer Science Association',
       org: 'Houston City College',
       meta: 'Volunteer',
       start: 'Aug 2025',
@@ -210,10 +210,12 @@ export const experience = {
       location: 'Houston, TX',
       volunteer: true,
       bullets: [
+        'Hosted HackHCC: CodeRunners with the association, the first hackathon in Houston City College history.',
+        'Now organizing the second, HackHCC: CTRL+Z.',
         'Lead marketing for the association, promoting its events and workshops to students across campus.',
         'Mentor students in CS fundamentals and help organize workshops connecting peers with industry professionals.',
       ],
-      tags: ['Marketing', 'Mentorship', 'Community'],
+      tags: ['Hackathons', 'Marketing', 'Mentorship', 'Community'],
     },
   ],
 };
@@ -243,7 +245,7 @@ export const projects = {
       year: '2025',
       stack: ['Python', 'ML'],
       summary:
-        'First place at the University of Houston CodeRed hackathon — built and pitched a working product under a hard deadline alongside a small team.',
+        'First place at the University of Houston CodeRed hackathon. Built and pitched a working product under a hard deadline alongside a small team.',
       links: [],
       featured: true,
     },
@@ -299,5 +301,5 @@ export const hobbies = {
 export const contact = {
   heading: "Let's talk",
   blurb:
-    "I'm always glad to hear about security, ML, and data work — or to talk with someone early in their career who wants in.",
+    "I'm always glad to hear about security, ML, and data work, or to talk with someone early in their career who wants in.",
 };
