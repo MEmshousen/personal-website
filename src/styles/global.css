@@ -452,7 +452,7 @@ html[data-theme='dossier'] .spotlight { display: none; }
   transform-origin: 0 50%;
 }
 
-/* Short confirmation message ("Email copied") */
+/* Short confirmation message ("Copied to clipboard") */
 .toast {
   position: fixed;
   left: 50%;

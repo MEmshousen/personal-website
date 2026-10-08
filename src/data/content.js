@@ -36,7 +36,6 @@ export const profile = {
   tagline:
     'I build machine learning pipelines that protect real assets, turning messy data into evidence, intelligence, and decisions.',
   location: 'Houston, Texas · Remote',
-  email: 'memshousen@gmail.com',
   links: {
     github: 'https://github.com/MEmshousen',
     linkedin: 'https://www.linkedin.com/in/madison-emshousen',

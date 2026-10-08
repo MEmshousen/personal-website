@@ -11,8 +11,7 @@ const commands = [
     group: 'Go to', label, action: 'goto', value: `#${label.toLowerCase()}`,
   })),
   { group: 'Go to', label: 'Work in progress', action: 'goto', value: '#wip' },
-  { group: 'Action', label: 'Copy email address', action: 'copy', value: profile.email },
-  { group: 'Action', label: 'Write an email', action: 'open', value: `mailto:${profile.email}` },
+  { group: 'Action', label: 'Message me on LinkedIn', action: 'tab', value: profile.links.linkedin },
   { group: 'Action', label: 'Download résumé', action: 'download', value: resumeHref },
   { group: 'Link', label: 'Open LinkedIn', action: 'tab', value: profile.links.linkedin },
   { group: 'Link', label: 'Open GitHub', action: 'tab', value: profile.links.github },
@@ -114,13 +113,6 @@ const commands = [
       // On pages without that section (the 404), go to it on the home page
       if (target) target.scrollIntoView();
       else location.href = `${dialog.dataset.home.replace(/\/$/, '')}/${value}`;
-    } else if (action === 'copy') {
-      navigator.clipboard.writeText(value).then(
-        () => document.dispatchEvent(new CustomEvent('toast', { detail: 'Email copied to clipboard' })),
-        () => document.dispatchEvent(new CustomEvent('toast', { detail: 'Copy failed. The address is in Contact.' }))
-      );
-    } else if (action === 'open') {
-      location.href = value;
     } else if (action === 'tab') {
       window.open(value, '_blank', 'noopener');
     } else if (action === 'download') {

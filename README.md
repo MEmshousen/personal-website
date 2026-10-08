@@ -22,7 +22,7 @@ Edit, save, and the dev server updates instantly.
 | To change | Edit |
 | --- | --- |
 | Which design is live | `site.design` |
-| Name, job title, employer, tagline, email, links | `profile` |
+| Name, job title, employer, tagline, links | `profile` |
 | Portrait and résumé files | `profile.photo`, `profile.resume` |
 | The rotating "I work in…" line | `profile.roles` |
 | About paragraphs and the four figures | `about` |
