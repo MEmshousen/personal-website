@@ -112,7 +112,7 @@ export const skills = {
     {
       name: 'Databases',
       icon: 'database',
-      items: ['Advanced SQL', 'RDBMS', 'Query Optimization', 'Indexing', 'React.js'],
+      items: ['Advanced SQL', 'RDBMS', 'Query Optimization', 'Indexing'],
     },
     {
       name: 'Tools & Platforms',
@@ -120,7 +120,7 @@ export const skills = {
       items: [
         'CrowdStrike Falcon', 'Microsoft Purview', 'Microsoft Defender',
         'Microsoft Intune', 'Microsoft Entra ID', 'Power Automate',
-        'Jupyter', 'Git / GitHub', 'Tableau & BI', 'Agile',
+        'Jupyter', 'Git / GitHub', 'React.js', 'Tableau & BI', 'Agile',
       ],
     },
   ],
