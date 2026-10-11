@@ -249,6 +249,17 @@ export const projects = {
       featured: true,
     },
     {
+      title: 'AI Displacement Explorer',
+      year: '2026',
+      stack: ['TypeScript', 'Astro', 'D3', 'Data Viz'],
+      summary:
+        'An interactive look at how AI adoption is reshaping workforces across 80 countries and ten sectors. Four headline findings, then a world map, trend chart and sector ranking that all follow one shareable selection. Built on a synthetic dataset, and labelled that way throughout.',
+      links: [
+        { label: 'Live site', url: 'https://memshousen.github.io/ai-displacement-explorer/' },
+        { label: 'Code', url: 'https://github.com/MEmshousen/ai-displacement-explorer' },
+      ],
+    },
+    {
       title: 'Online Music Database',
       year: '2024',
       stack: ['SQL', 'Java', 'React.js'],
