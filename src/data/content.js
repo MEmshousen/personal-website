@@ -145,6 +145,7 @@ export const experience = {
       end: 'Present',
       current: true,
       bullets: [
+        'Uncovered a coordinated operation of 20 individuals working from a restricted country, tracing how the network was organized and documenting the evidence end to end.',
         'Investigate potential insider threats, including data exfiltration, policy violations, and misuse of access, from the first alert through to documented findings.',
         'Correlate endpoint telemetry from CrowdStrike Falcon and Microsoft Defender with Microsoft Purview data-loss and insider-risk signals to reconstruct what a user did, and when.',
         'Write KQL queries to hunt across sign-in, device, and data-movement logs, and turn recurring questions into reusable detections.',
